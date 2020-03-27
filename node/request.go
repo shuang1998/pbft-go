@@ -4,7 +4,7 @@ import (
 	"log"
 )
 
-func (n *Node) RequestRecvThread() {
+func (n *Node) requestRecvThread() {
 	log.Printf("[Node] start recv the request thread")
 	for {
 		msg := <- n.requestRecv
@@ -17,6 +17,6 @@ func (n *Node) RequestRecvThread() {
 			}
 		}
 		n.buffer.AppendToRequestQueue(msg)
-		n.prePrepareNotify <- true
+		n.prePrepareSendNotify <- true
 	}
 }

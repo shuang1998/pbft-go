@@ -8,6 +8,13 @@ import (
 	"strconv"
 )
 
+const (
+	RequestEntry    = "/request"
+	PrePrepareEntry = "/preprepare"
+	PrepareEntry    = "/prepare"
+	CommitEntry     = "/commit"
+)
+
 // http 监听请求
 type HttpServer struct {
 	port   int
@@ -45,10 +52,13 @@ func (s *HttpServer) Run() {
 }
 
 func (s *HttpServer) registerServer() {
-	log.Printf("[Server] set listen port: %d\n", s.port)
+	log.Printf("[Server] set listen port:%d\n", s.port)
 
 	httpRegister := map[string]func(http.ResponseWriter, *http.Request){
-		"/request": s.HttpRequest,
+		RequestEntry:    s.HttpRequest,
+		PrePrepareEntry: s.HttpPrePrepare,
+		PrepareEntry:    s.HttpPrepare,
+		CommitEntry:     s.HttpCommit,
 	}
 
 	mux := http.NewServeMux()
@@ -56,10 +66,12 @@ func (s *HttpServer) registerServer() {
 		log.Printf("[Server] register the func for %s", k)
 		mux.HandleFunc(k, v)
 	}
+
 	s.server = &http.Server{
 		Addr:    ":" + strconv.Itoa(s.port),
 		Handler: mux,
 	}
+
 	if err := s.server.ListenAndServe(); err != nil {
 		log.Printf("[Server Error] %s", err)
 		return

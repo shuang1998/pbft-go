@@ -31,3 +31,4 @@ func (r *LastReply) Set(msg *Reply) {
 	r.reply = msg
 	r.locker.Unlock()
 }
+

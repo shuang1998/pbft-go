@@ -15,3 +15,30 @@ func (s *HttpServer) HttpRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	s.requestRecv <- &msg
 }
+
+func (s *HttpServer) HttpPrePrepare(w http.ResponseWriter, r *http.Request) {
+	var msg message.PrePrepare
+	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
+		log.Printf("[Http Error] %s", err)
+		return
+	}
+	s.prePrepareRecv <- &msg
+}
+
+func (s *HttpServer) HttpPrepare(w http.ResponseWriter, r *http.Request) {
+	var msg message.Prepare
+	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
+		log.Printf("[Http Error] %s", err)
+		return
+	}
+	s.prepareRecv <- &msg
+}
+
+func (s *HttpServer) HttpCommit(w http.ResponseWriter, r *http.Request) {
+	var msg message.Commit
+	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
+		log.Printf("[Http Error] %s", err)
+		return
+	}
+	s.commit <- &msg
+}

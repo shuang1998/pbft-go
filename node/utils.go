@@ -38,7 +38,7 @@ func (n *Node) GetPrimary() message.Identify {
 
 func (n *Node) IsPrimary() bool {
 	p := n.GetPrimary()
-	if p == n.view {
+	if p == message.Identify(n.view) {
 		return true
 	}
 	return false
