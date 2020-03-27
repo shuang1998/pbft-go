@@ -16,11 +16,11 @@ type Node struct {
 	table    map[message.Identify]string
 	faultNum uint
 
-	lastReply      *message.LastReply
-	sequence       *Sequence
-	executeNum     *ExecuteOpNum
+	lastReply  *message.LastReply
+	sequence   *Sequence
+	executeNum *ExecuteOpNum
 
-	buffer         *message.Buffer
+	buffer *message.Buffer
 
 	requestRecv    chan *message.Request
 	prePrepareRecv chan *message.PrePrepare
@@ -34,13 +34,13 @@ type Node struct {
 func NewNode(cfg *cmd.SharedConfig) *Node {
 	node := &Node{
 		// config
-		cfg:	  cfg,
+		cfg: cfg,
 		// http server
-		server:   server.NewServer(cfg),
+		server: server.NewServer(cfg),
 		// information about node
 		id:       cfg.Id,
 		view:     cfg.View,
-		table:	  cfg.Table,
+		table:    cfg.Table,
 		faultNum: cfg.FaultNum,
 		// lastReply state
 		lastReply:  message.NewLastReply(),
@@ -56,7 +56,7 @@ func NewNode(cfg *cmd.SharedConfig) *Node {
 		// chan for notify pre-prepare send thread
 		prePrepareSendNotify: make(chan bool),
 		// chan for notify execute op and reply thread
-		executeNotify:        make(chan bool),
+		executeNotify: make(chan bool),
 	}
 	log.Printf("[Node] the node id:%d, view:%d, fault number:%d\n", node.id, node.view, node.faultNum)
 	return node

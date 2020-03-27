@@ -13,12 +13,7 @@ func (n *Node) commitRecvThread() {
 			}
 			// buffer the commit msg
 			n.buffer.BufferCommitMsg(msg)
-			if n.buffer.IsTrueOfCommitMsg(msg.Digest, n.cfg.FaultNum) &&
-			   n.buffer.IsTrueOfPrepareMsg(msg.Digest, n.cfg.FaultNum) &&
-			   n.buffer.IsExistPreprepareMsg(msg.View, msg.Sequence) {
-				// clear the buffer about msg.Digest
-				n.buffer.ClearCommitMsg(msg.Digest)
-				n.buffer.ClearPrepareMsg(msg.Digest)
+			if n.buffer.IsReadyToExecute(msg.Digest, n.cfg.FaultNum, msg.View, msg.Sequence) {
 				// buffer to ExcuteQueue
 				n.buffer.AppendToExecuteQueue(msg)
 				// notify ExcuteThread

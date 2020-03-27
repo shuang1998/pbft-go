@@ -14,9 +14,11 @@ type Buffer struct {
 	prePrepareLocker *sync.RWMutex
 
 	prepareSet		 map[string]map[Identify]bool
+	prepareState     map[string]bool
 	prepareLocker    *sync.RWMutex
 
 	commitSet		 map[string]map[Identify]bool
+	commitState      map[string]bool
 	commitLocker     *sync.RWMutex
 
 	executeQueue	 []*Commit
@@ -33,9 +35,11 @@ func NewBuffer() *Buffer {
 		prePrepareLocker: new(sync.RWMutex),
 
 		prepareSet:       make(map[string]map[Identify]bool),
+		prepareState:	  make(map[string]bool),
 		prepareLocker:    new(sync.RWMutex),
 
 		commitSet:		  make(map[string]map[Identify]bool),
+		commitState:      make(map[string]bool),
 		commitLocker:     new(sync.RWMutex),
 
 		executeQueue:	  make([]*Commit, 0),
@@ -114,17 +118,20 @@ func (b *Buffer) BufferPrepareMsg(msg *Prepare) {
 func (b *Buffer) ClearPrepareMsg(digest string) {
 	b.prepareLocker.Lock()
 	delete(b.prepareSet, digest)
+	delete(b.prepareState, digest)
 	b.prepareLocker.Unlock()
 }
 
 func (b *Buffer) IsTrueOfPrepareMsg(digest string, falut uint) bool {
-	b.prepareLocker.RLock()
-	num := uint(len(b.prepareSet[digest]))
-	if num < 2 * falut {
-		b.prepareLocker.RUnlock()
+	b.prepareLocker.Lock()
+	num   := uint(len(b.prepareSet[digest]))
+	_, ok := b.prepareState[digest]
+	if num < 2 * falut || ok {
+		b.prepareLocker.Unlock()
 		return false
 	}
-	b.prepareLocker.RUnlock()
+	b.prepareState[digest] = true
+	b.prepareLocker.Unlock()
 	return true
 }
 
@@ -141,17 +148,20 @@ func (b *Buffer) BufferCommitMsg(msg *Commit) {
 func (b *Buffer) ClearCommitMsg(digest string) {
 	 b.commitLocker.Lock()
 	 delete(b.commitSet, digest)
+	 delete(b.commitState, digest)
 	 b.commitLocker.Unlock()
 }
 
 func (b *Buffer) IsTrueOfCommitMsg(digest string, falut uint) bool {
-	b.commitLocker.RLock()
-	num := uint(len(b.commitSet[digest]))
-	if num < 2 * falut + 1 {
-		b.commitLocker.RUnlock()
+	b.commitLocker.Lock()
+	num   := uint(len(b.commitSet[digest]))
+	_, ok := b.commitState[digest]
+	if num < 2 * falut + 1 || ok {
+		b.commitLocker.Unlock()
 		return false
 	}
-	b.commitLocker.RUnlock()
+	b.commitState[digest] = true
+	b.commitLocker.Unlock()
 	return true
 }
 
@@ -199,4 +209,15 @@ func (b *Buffer) BatchExecute(lastSequence Sequence) ([]string, Sequence){
 		loop  = loop + 1
 		index = index + 1
 	}
+}
+
+func (b *Buffer) IsReadyToExecute(digest string, fault uint, view View, sequence Sequence) bool {
+	b.prepareLocker.RLock()
+	defer b.prepareLocker.RUnlock()
+
+	_, isPrepare := b.prepareState[digest]
+	if b.IsExistPreprepareMsg(view, sequence) && isPrepare && b.IsTrueOfCommitMsg(digest, fault) {
+		return true
+	}
+	return false
 }
